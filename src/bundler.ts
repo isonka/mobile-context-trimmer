@@ -33,6 +33,9 @@ export async function buildBundle(
 
   for (const file of files) {
     const content = file.content ?? (await fs.readFile(file.absolutePath, "utf8"));
+    if (content.trim().length === 0) {
+      continue;
+    }
     const estimatedTokens = options.tokenizer.estimateTokens(content);
     if (estimatedTokens === 0) {
       continue;

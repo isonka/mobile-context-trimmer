@@ -30,6 +30,25 @@ describe("bundler", () => {
     expect(bundle.skippedFully).toBe(1);
   });
 
+  it("omits whitespace-only files before budget selection", async () => {
+    const withNewlinesOnly: MobileScannedFile[] = [
+      {
+        absolutePath: "/tmp/ws.swift",
+        relativePath: "ios/ws.swift",
+        extension: ".swift",
+        sizeBytes: 6,
+        content: "\n\n  \n"
+      },
+      ...fixtures
+    ];
+    const bundle = await buildBundle(withNewlinesOnly, {
+      tokenBudget: 20,
+      tokenizer: createDefaultTokenizer()
+    });
+    expect(bundle.items.map((i) => i.path)).not.toContain("ios/ws.swift");
+    expect(bundle.items.length).toBe(2);
+  });
+
   it("omits zero-token files before budget selection", async () => {
     const withEmpty: MobileScannedFile[] = [
       {
