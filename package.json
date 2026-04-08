@@ -18,11 +18,36 @@
     "build": "tsc -p tsconfig.json",
     "dev": "tsx src/cli.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "npm test && npm run build"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "ios",
+    "android",
+    "mobile",
+    "swift",
+    "kotlin",
+    "llm",
+    "context",
+    "cli",
+    "typescript",
+    "codebase",
+    "xcode",
+    "gradle"
+  ],
+  "author": "isonka",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/isonka/mobile-context-trimmer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/isonka/mobile-context-trimmer/issues"
+  },
+  "homepage": "https://github.com/isonka/mobile-context-trimmer#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "dependencies": {
     "ignore": "^7.0.5",

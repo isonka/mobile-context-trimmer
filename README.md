@@ -58,6 +58,16 @@ npx mobile-context-trimmer --dir ./MyApp --query "navigation stack" --budget 160
 | `--min-combined-score` | `number` | **`0.1`** when `--query` is set | Omit ranked files whose combined `score` is **strictly below** this value. **`-1`** disables. |
 | `--keyword-recency-reference` | `number` | **`~0.055`** | Recency dampening reference (see above). **`0`** disables dampening. |
 
+### Ranking & bundle gate flags (reference)
+
+These three flags only affect behavior when you pass a **non-empty `--query`** (except `--min-keyword-score`, which is ignored when the query is empty).
+
+| Flag | Effect |
+| --- | --- |
+| **`--min-keyword-score`** | Drops files whose lexical **keyword score** (TF×IDF) is **≤** this value before spending token budget. **Default with query: `0`** (drops files with no query match). **`-1`** disables this floor. Raise it (e.g. `0.02`) if incidental token hits still get through. |
+| **`--min-combined-score`** | Drops files whose **weighted rank score** (keyword + damped recency + type) is **&lt;** this value. **Default with query: `0.1`**. **`-1`** disables. Tune roughly **0.08–0.15** on many iOS repos; increase toward **0.2** if utility files still fill the tail. |
+| **`--keyword-recency-reference`** | Controls **recency dampening**: recency is scaled by `min(1, keywordScore / reference)`. **Default: ~`0.055`**. **`0`** turns dampening off (legacy: full recency weight even for weak keyword hits). **Lower** the reference to dampen recency more aggressively for weak matches. |
+
 ## Scanning defaults
 
 **Extensions (whitelist):** `.swift`, `.m`, `.mm`, `.h`, `.plist`, `.kt`, `.kts`, `.java`, `.xml`, `.gradle`, `.properties`
@@ -81,6 +91,8 @@ The CLI uses **metadata-first** scanning (`includeContent: false` during walk) a
 
 - Absolute path: `/path/to/MyApp/ios/App/AppDelegate.swift`
 - Estimated tokens: 80
+- Rank score: 0.812345
+- Keyword score: 0.401000
 
 ```
 // file content
@@ -122,6 +134,16 @@ npm install
 npm test
 npm run build
 ```
+
+### CI
+
+[GitHub Actions](.github/workflows/ci.yml) runs **`npm ci`**, **`npm test`**, and **`npm run build`** on **push** and **pull request** to `main` or `master` (Node 18, 20, 22).
+
+### Publishing to npm
+
+- `package.json` includes **`publishConfig.access: "public"`** for scoped or first-time public packages.
+- Set **`repository`**, **`bugs`**, and **`homepage`** in `package.json` to your GitHub URLs if they differ from the template.
+- From a clean tree: `npm run build && npm test`, then `npm publish` (with npm login and version bump as needed).
 
 Tests include unit coverage for scanner, tokenizer, bundler, ranker (TF‑IDF), Xcode path heuristics, optional git recency, and a CLI end-to-end run.
 

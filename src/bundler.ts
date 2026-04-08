@@ -27,6 +27,10 @@ export interface BundleItem {
   path: string;
   content: string;
   estimatedTokens: number;
+  /** Present when the bundled file came from ranked output. */
+  score?: number;
+  /** Present when the bundled file came from ranked output. */
+  keywordScore?: number;
 }
 
 export interface BundleResult {
@@ -77,11 +81,18 @@ export async function buildBundle(
       skippedFully += 1;
       continue;
     }
-    items.push({
+    const item: BundleItem = {
       path: file.relativePath,
       content,
       estimatedTokens
-    });
+    };
+    if (hasRankScore(file)) {
+      item.score = file.score;
+    }
+    if (hasKeywordScore(file)) {
+      item.keywordScore = file.keywordScore;
+    }
+    items.push(item);
     usedTokens += estimatedTokens;
   }
 
@@ -108,18 +119,22 @@ function hasRankScore(file: MobileScannedFile): file is RankedMobileFile {
  * Formats bundle output as markdown.
  */
 export function formatBundleMarkdown(bundle: BundleResult, rootDir: string): string {
-  const sections = bundle.items.map((item) =>
-    [
+  const sections = bundle.items.map((item) => {
+    const lines = [
       `## File: \`${item.path}\``,
       "",
       `- Absolute path: \`${path.resolve(rootDir, item.path)}\``,
-      `- Estimated tokens: ${item.estimatedTokens}`,
-      "",
-      "```",
-      item.content,
-      "```"
-    ].join("\n")
-  );
+      `- Estimated tokens: ${item.estimatedTokens}`
+    ];
+    if (item.score !== undefined) {
+      lines.push(`- Rank score: ${item.score.toFixed(6)}`);
+    }
+    if (item.keywordScore !== undefined) {
+      lines.push(`- Keyword score: ${item.keywordScore.toFixed(6)}`);
+    }
+    lines.push("", "```", item.content, "```");
+    return lines.join("\n");
+  });
 
   return [
     "# Mobile Context Bundle",

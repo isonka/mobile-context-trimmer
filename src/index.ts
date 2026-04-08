@@ -98,6 +98,7 @@ export {
   buildBundle,
   DEFAULT_MIN_COMBINED_SCORE_WITH_QUERY,
   formatBundleMarkdown,
+  type BundleItem,
   type BundleOptions,
   type BundleResult
 } from "./bundler.js";

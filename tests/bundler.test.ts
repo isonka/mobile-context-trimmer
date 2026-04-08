@@ -79,6 +79,31 @@ describe("bundler", () => {
     expect(markdown).toContain("## File: `ios/A.swift`");
     expect(markdown).toContain("skipped below keyword relevance floor");
     expect(markdown).toContain("skipped below combined rank score");
+    expect(markdown).not.toContain("Rank score:");
+  });
+
+  it("includes rank and keyword scores in markdown for ranked input", async () => {
+    const ranked: RankedMobileFile[] = [
+      {
+        absolutePath: "/tmp/Push.swift",
+        relativePath: "ios/Push.swift",
+        extension: ".swift",
+        sizeBytes: 8,
+        content: "push",
+        score: 0.812345,
+        keywordScore: 0.401,
+        recencyScore: 0.5,
+        typeScore: 1,
+        lastModifiedEpochMs: 1
+      }
+    ];
+    const bundle = await buildBundle(ranked, {
+      tokenBudget: 50,
+      tokenizer: createDefaultTokenizer()
+    });
+    const md = formatBundleMarkdown(bundle, "/tmp");
+    expect(md).toContain("Rank score: 0.812345");
+    expect(md).toContain("Keyword score: 0.401000");
   });
 
   it("omits ranked files at or below minKeywordScore before budget selection", async () => {
@@ -114,6 +139,8 @@ describe("bundler", () => {
       minKeywordScore: 0
     });
     expect(bundle.items.map((i) => i.path)).toEqual(["ios/Push.swift"]);
+    expect(bundle.items[0]?.score).toBe(0.5);
+    expect(bundle.items[0]?.keywordScore).toBe(0.2);
     expect(bundle.skippedBelowRelevance).toBe(1);
   });
 
