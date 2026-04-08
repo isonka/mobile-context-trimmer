@@ -94,3 +94,10 @@ export function detectMobilePlatform(paths: string[]): MobilePlatform {
 export { scanMobileFiles, type MobileScannedFile, type MobileScanOptions } from "./scanner.js";
 export { createDefaultTokenizer, estimateChar4Tokens, type Tokenizer } from "./tokenizer.js";
 export { buildBundle, formatBundleMarkdown, type BundleOptions, type BundleResult } from "./bundler.js";
+export {
+  rankMobileFiles,
+  tokenizeQuery,
+  computeKeywordScore,
+  type RankMobileOptions,
+  type RankedMobileFile
+} from "./ranker.js";
