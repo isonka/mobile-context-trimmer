@@ -45,7 +45,7 @@ npx mobile-context-trimmer --dir ./MyApp --query "navigation stack" --budget 160
 
 **Extensions (whitelist):** `.swift`, `.m`, `.mm`, `.h`, `.plist`, `.kt`, `.kts`, `.java`, `.xml`, `.gradle`, `.properties`
 
-**Always ignored (in addition to `.gitignore` / `.trimmerignore`):** e.g. `Pods/`, `DerivedData/`, `.gradle/`, `build/`, common IDE and web artifacts. See `getDefaultMobileIgnorePatterns()` in source.
+**Always ignored (in addition to `.gitignore` / `.trimmerignore`):** e.g. `Pods/`, `DerivedData/`, `.gradle/`, `build/`, Core Data `*.xcmapping.xml`, common IDE and web artifacts. See `getDefaultMobileIgnorePatterns()` in source.
 
 The CLI uses **metadata-first** scanning (`includeContent: false` during walk) and reads file contents only while ranking and bundling.
 

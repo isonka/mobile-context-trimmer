@@ -29,6 +29,7 @@ describe("getDefaultMobileIgnorePatterns", () => {
     expect(patterns).toContain("DerivedData/");
     expect(patterns).toContain(".gradle/");
     expect(patterns).toContain("**/build/");
+    expect(patterns).toContain("*.xcmapping.xml");
   });
 });
 

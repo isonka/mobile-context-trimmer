@@ -30,6 +30,25 @@ describe("bundler", () => {
     expect(bundle.skippedFully).toBe(1);
   });
 
+  it("omits zero-token files before budget selection", async () => {
+    const withEmpty: MobileScannedFile[] = [
+      {
+        absolutePath: "/tmp/empty.swift",
+        relativePath: "ios/empty.swift",
+        extension: ".swift",
+        sizeBytes: 0,
+        content: ""
+      },
+      ...fixtures
+    ];
+    const bundle = await buildBundle(withEmpty, {
+      tokenBudget: 20,
+      tokenizer: createDefaultTokenizer()
+    });
+    expect(bundle.items.map((i) => i.path)).not.toContain("ios/empty.swift");
+    expect(bundle.items.length).toBe(2);
+  });
+
   it("formats markdown", async () => {
     const bundle = await buildBundle(fixtures, {
       tokenBudget: 20,

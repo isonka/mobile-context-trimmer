@@ -42,7 +42,8 @@ export function getDefaultMobileIgnorePatterns(): string[] {
     ".next/",
     ".turbo/",
     "*.xcworkspace/xcuserdata/",
-    "*.xcodeproj/xcuserdata/"
+    "*.xcodeproj/xcuserdata/",
+    "*.xcmapping.xml"
   ];
 }
 

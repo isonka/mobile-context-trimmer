@@ -31,6 +31,21 @@ describe("scanMobileFiles", () => {
     });
   });
 
+  it("ignores Core Data xcmapping.xml tooling files", async () => {
+    await withTempDir(async (dir) => {
+      await fs.mkdir(path.join(dir, "ios", "Model.xcdatamodeld"), { recursive: true });
+      await fs.writeFile(path.join(dir, "ios", "Real.swift"), "struct Real {}", "utf8");
+      await fs.writeFile(
+        path.join(dir, "ios", "Model.xcdatamodeld", "Model.xcmapping.xml"),
+        "<xml/>",
+        "utf8"
+      );
+
+      const files = await scanMobileFiles({ rootDir: dir });
+      expect(files.map((f) => f.relativePath)).toEqual(["ios/Real.swift"]);
+    });
+  });
+
   it("respects .trimmerignore and can include content", async () => {
     await withTempDir(async (dir) => {
       await fs.mkdir(path.join(dir, "ios"), { recursive: true });
