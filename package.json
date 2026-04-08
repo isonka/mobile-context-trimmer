@@ -1,0 +1,38 @@
+{
+  "name": "mobile-context-trimmer",
+  "version": "0.1.0",
+  "description": "CLI and library for building LLM context bundles for native iOS and Android projects",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "bin": {
+    "mobile-context-trimmer": "dist/cli.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/cli.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "ignore": "^7.0.5",
+    "yargs": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "@types/yargs": "^17.0.35",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.3"
+  }
+}
