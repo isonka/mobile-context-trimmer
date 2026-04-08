@@ -12,7 +12,7 @@
     "mobile-context-trimmer": "dist/cli.js"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20.19.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -54,6 +54,8 @@
     "yargs": "^18.0.0"
   },
   "devDependencies": {
+    "@emnapi/core": "1.9.2",
+    "@emnapi/runtime": "1.9.2",
     "@types/node": "^25.5.2",
     "@types/yargs": "^17.0.35",
     "tsx": "^4.21.0",
