@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { getDefaultMobileExtensions, getLibraryName } from "../src/index.js";
+import {
+  getDefaultMobileExtensions,
+  getDefaultMobileIgnorePatterns,
+  getLibraryName
+} from "../src/index.js";
 
 describe("getLibraryName", () => {
   it("returns package identifier", () => {
@@ -14,5 +18,15 @@ describe("getDefaultMobileExtensions", () => {
     expect(extensions).toContain(".kt");
     expect(extensions).toContain(".java");
     expect(extensions).toContain(".xml");
+  });
+});
+
+describe("getDefaultMobileIgnorePatterns", () => {
+  it("includes common generated and tool directories", () => {
+    const patterns = getDefaultMobileIgnorePatterns();
+    expect(patterns).toContain("Pods/");
+    expect(patterns).toContain("DerivedData/");
+    expect(patterns).toContain(".gradle/");
+    expect(patterns).toContain("**/build/");
   });
 });

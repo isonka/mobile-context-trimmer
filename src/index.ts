@@ -23,3 +23,25 @@ export function getDefaultMobileExtensions(): string[] {
     ".properties"
   ];
 }
+
+/**
+ * Returns default ignore patterns for native mobile repositories.
+ */
+export function getDefaultMobileIgnorePatterns(): string[] {
+  return [
+    ".git/",
+    "node_modules/",
+    "Pods/",
+    "DerivedData/",
+    ".gradle/",
+    ".idea/",
+    "build/",
+    "**/build/",
+    ".cxx/",
+    ".dart_tool/",
+    ".next/",
+    ".turbo/",
+    "*.xcworkspace/xcuserdata/",
+    "*.xcodeproj/xcuserdata/"
+  ];
+}
