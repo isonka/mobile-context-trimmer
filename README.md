@@ -4,7 +4,7 @@
 
 ## Status
 
-Initial scaffold is in place (CLI entrypoint, typed library export, test setup, and build pipeline).
+Initial pipeline is in place: mobile scanner, token estimator, budget bundler, and CLI output.
 
 ## Quick start
 
@@ -17,7 +17,7 @@ npm run build
 Run the CLI:
 
 ```bash
-npx mobile-context-trimmer
+npx mobile-context-trimmer --dir ./MyApp --budget 32000 --out mobile-context.md
 ```
 
 ## Project structure
@@ -25,8 +25,11 @@ npx mobile-context-trimmer
 ```
 mobile-context-trimmer/
 ├── src/
+│   ├── bundler.ts
 │   ├── cli.ts
-│   └── index.ts
+│   ├── index.ts
+│   ├── scanner.ts
+│   └── tokenizer.ts
 ├── tests/
 │   └── index.test.ts
 ├── LICENSE
