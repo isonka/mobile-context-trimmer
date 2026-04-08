@@ -35,6 +35,11 @@ void yargs(hideBin(process.argv))
     describe:
       "Keyword relevance floor when --query is set (default: 0, omit files with no query match). Use a negative value to disable."
   })
+  .option("min-combined-score", {
+    type: "number",
+    describe:
+      "Minimum weighted rank score (keyword+recency+type) to include a file; drops low-relevance utilities with high recency. Try 0.25–0.35 for task-focused bundles."
+  })
   .command(
     "$0",
     "Build a mobile context bundle",
@@ -58,10 +63,15 @@ void yargs(hideBin(process.argv))
         query: String(argv.query ?? ""),
         rootDir
       });
+      const rawCombined = argv["min-combined-score"] as number | undefined;
+      const minCombinedScore =
+        rawCombined !== undefined && !Number.isNaN(rawCombined) ? rawCombined : undefined;
+
       const bundle = await buildBundle(rankedFiles, {
         tokenBudget: budget,
         tokenizer: createDefaultTokenizer(),
-        minKeywordScore
+        minKeywordScore,
+        minCombinedScore
       });
       const output = formatBundleMarkdown(bundle, rootDir);
 

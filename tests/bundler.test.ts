@@ -78,6 +78,7 @@ describe("bundler", () => {
     expect(markdown).toContain("# Mobile Context Bundle");
     expect(markdown).toContain("## File: `ios/A.swift`");
     expect(markdown).toContain("skipped below keyword relevance floor");
+    expect(markdown).toContain("skipped below combined rank score");
   });
 
   it("omits ranked files at or below minKeywordScore before budget selection", async () => {
@@ -114,5 +115,42 @@ describe("bundler", () => {
     });
     expect(bundle.items.map((i) => i.path)).toEqual(["ios/Push.swift"]);
     expect(bundle.skippedBelowRelevance).toBe(1);
+  });
+
+  it("omits ranked files below minCombinedScore before budget selection", async () => {
+    const ranked: RankedMobileFile[] = [
+      {
+        absolutePath: "/tmp/Orientation.swift",
+        relativePath: "ios/OrientationManager.swift",
+        extension: ".swift",
+        sizeBytes: 20,
+        content: "struct OrientationManager {}",
+        score: 0.35,
+        keywordScore: 0.02,
+        recencyScore: 0.95,
+        typeScore: 1,
+        lastModifiedEpochMs: 9
+      },
+      {
+        absolutePath: "/tmp/Subscriptions.swift",
+        relativePath: "ios/SubscriptionsMenu.swift",
+        extension: ".swift",
+        sizeBytes: 40,
+        content: "subscriptions menu marktplaats",
+        score: 0.72,
+        keywordScore: 0.4,
+        recencyScore: 0.5,
+        typeScore: 1,
+        lastModifiedEpochMs: 5
+      }
+    ];
+    const bundle = await buildBundle(ranked, {
+      tokenBudget: 200,
+      tokenizer: createDefaultTokenizer(),
+      minKeywordScore: 0,
+      minCombinedScore: 0.5
+    });
+    expect(bundle.items.map((i) => i.path)).toEqual(["ios/SubscriptionsMenu.swift"]);
+    expect(bundle.skippedBelowCombinedScore).toBe(1);
   });
 });

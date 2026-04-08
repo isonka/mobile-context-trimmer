@@ -46,6 +46,7 @@ describe("cli", () => {
       const content = await fs.readFile(outPath, "utf8");
       expect(content).toContain("# Mobile Context Bundle");
       expect(content).toContain("skipped below keyword relevance floor");
+      expect(content).toContain("skipped below combined rank score");
       expect(content).toContain("ios/AppDelegate.swift");
     });
   });

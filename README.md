@@ -20,10 +20,18 @@ Default weights: keyword **0.55**, recency **0.30**, type **0.15** (recency matt
 
 Files are then selected in **rank order** until the token budget is exhausted. When you pass a **non-empty `--query`**, the bundler applies a default **keyword relevance floor** (`minKeywordScore: 0`): files with **no lexical match** to the query (`keywordScore <= 0`) are **dropped** before budgeting, so recently touched A/B experiment stubs cannot crowd out on-topic files. Raise the floor with `--min-keyword-score` to demand stronger matches; use **`--min-keyword-score -1`** to disable the floor while keeping ranking.
 
+**Tail noise from recency:** Generic utilities (`OrientationManager`, `AnyEncodable`, layout helpers) can still rank above the keyword floor if they were touched in the same release and pick up a tiny IDF hit. Use **`--min-combined-score`** (library: `minCombinedScore`) to require a minimum **weighted** rank score (keyword + recency + type). Values in the **0.25–0.35** range are a reasonable starting point for task-focused bundles (e.g. “add subscriptions to menu”); tune against your repo so strong feature files still pass.
+
 ## Quick start
 
 ```bash
 npx mobile-context-trimmer --dir ./MyApp --query "fix login crash" --budget 32000 --out mobile-context.md
+```
+
+Task-focused run (trim utilities that only clear the keyword floor):
+
+```bash
+npx mobile-context-trimmer --dir ./MyApp --query "add subscriptions to menu" --min-combined-score 0.3 --budget 32000 --out mobile-context.md
 ```
 
 Stream to stdout (omit `--out`):
@@ -41,6 +49,7 @@ npx mobile-context-trimmer --dir ./MyApp --query "navigation stack" --budget 160
 | `--budget` | `number` | `32000` | Approximate token budget (char/4 estimator) |
 | `--out` | `string` | none | Write markdown bundle to this path |
 | `--min-keyword-score` | `number` | `0` when `--query` is set; disabled when query empty | Omit files with `keywordScore` at or below this value. Negative value disables the floor. |
+| `--min-combined-score` | `number` | none | Omit ranked files whose combined `score` is **strictly below** this value. Optional; use to trim low-relevance, high-recency utilities from the bundle tail. |
 
 ## Scanning defaults
 
@@ -59,6 +68,7 @@ The CLI uses **metadata-first** scanning (`includeContent: false` during walk) a
 - Tokens used: 120
 - Files skipped due to budget: 5
 - Files skipped below keyword relevance floor: 6
+- Files skipped below combined rank score: 3
 
 ## File: `ios/App/AppDelegate.swift`
 
@@ -92,6 +102,7 @@ const bundle = await buildBundle(ranked, {
   tokenBudget: 32000,
   tokenizer,
   minKeywordScore: 0,
+  minCombinedScore: 0.3,
 });
 console.log(formatBundleMarkdown(bundle, rootDir));
 ```

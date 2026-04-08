@@ -13,6 +13,11 @@ export interface BundleOptions {
    * Use `0` to require strictly positive lexical relevance vs the query.
    */
   minKeywordScore?: number;
+  /**
+   * When set, ranked files with combined `score` (keyword + recency + type) **strictly below**
+   * this value are omitted so weakly relevant but recently touched utilities do not fill the tail.
+   */
+  minCombinedScore?: number;
 }
 
 export interface BundleItem {
@@ -26,6 +31,7 @@ export interface BundleResult {
   usedTokens: number;
   skippedFully: number;
   skippedBelowRelevance: number;
+  skippedBelowCombinedScore: number;
 }
 
 /**
@@ -39,12 +45,20 @@ export async function buildBundle(
   let usedTokens = 0;
   let skippedFully = 0;
   let skippedBelowRelevance = 0;
+  let skippedBelowCombinedScore = 0;
   const floor = options.minKeywordScore;
+  const minCombined = options.minCombinedScore;
 
   for (const file of files) {
     if (floor !== undefined && hasKeywordScore(file)) {
       if (file.keywordScore <= floor) {
         skippedBelowRelevance += 1;
+        continue;
+      }
+    }
+    if (minCombined !== undefined && hasRankScore(file)) {
+      if (file.score < minCombined) {
+        skippedBelowCombinedScore += 1;
         continue;
       }
     }
@@ -68,7 +82,7 @@ export async function buildBundle(
     usedTokens += estimatedTokens;
   }
 
-  return { items, usedTokens, skippedFully, skippedBelowRelevance };
+  return { items, usedTokens, skippedFully, skippedBelowRelevance, skippedBelowCombinedScore };
 }
 
 function hasKeywordScore(file: MobileScannedFile): file is RankedMobileFile {
@@ -76,6 +90,14 @@ function hasKeywordScore(file: MobileScannedFile): file is RankedMobileFile {
     "keywordScore" in file &&
     typeof (file as RankedMobileFile).keywordScore === "number" &&
     !Number.isNaN((file as RankedMobileFile).keywordScore)
+  );
+}
+
+function hasRankScore(file: MobileScannedFile): file is RankedMobileFile {
+  return (
+    "score" in file &&
+    typeof (file as RankedMobileFile).score === "number" &&
+    !Number.isNaN((file as RankedMobileFile).score)
   );
 }
 
@@ -103,6 +125,7 @@ export function formatBundleMarkdown(bundle: BundleResult, rootDir: string): str
     `- Tokens used: ${bundle.usedTokens}`,
     `- Files skipped due to budget: ${bundle.skippedFully}`,
     `- Files skipped below keyword relevance floor: ${bundle.skippedBelowRelevance}`,
+    `- Files skipped below combined rank score: ${bundle.skippedBelowCombinedScore}`,
     "",
     ...sections
   ].join("\n");
