@@ -90,3 +90,5 @@ export function detectMobilePlatform(paths: string[]): MobilePlatform {
   }
   return "unknown";
 }
+
+export { scanMobileFiles, type MobileScannedFile, type MobileScanOptions } from "./scanner.js";
