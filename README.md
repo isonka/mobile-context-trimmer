@@ -1,5 +1,9 @@
 # mobile-context-trimmer
 
+![npm](https://img.shields.io/npm/v/mobile-context-trimmer)
+![CI](https://github.com/isonka/mobile-context-trimmer/actions/workflows/ci.yml/badge.svg)
+![license](https://img.shields.io/github/license/isonka/mobile-context-trimmer)
+
 TypeScript CLI and library that scans native **iOS** and **Android** repositories and builds a token-budgeted markdown context bundle for LLMs.
 
 ## Why this exists
@@ -137,19 +141,21 @@ npm run build
 
 ### CI
 
-[GitHub Actions](.github/workflows/ci.yml) runs **`npm ci`**, **`npm test`**, and **`npm run build`** on **push** and **pull request** to `main` or `master` (Node 18, 20, 22).
+[GitHub Actions](.github/workflows/ci.yml) runs **`npm ci`**, **`npm test`**, and **`npm run build`** on **push** and **pull request** to `main` or `master` (Node 20, 22).
 
-### Publishing to npm
+### npm
 
-- `package.json` includes **`publishConfig.access: "public"`** for scoped or first-time public packages.
-- Set **`repository`**, **`bugs`**, and **`homepage`** in `package.json` to your GitHub URLs if they differ from the template.
-- From a clean tree: `npm run build && npm test`, then `npm publish` (with npm login and version bump as needed).
+Available on npm: `npx mobile-context-trimmer`
 
 Tests include unit coverage for scanner, tokenizer, bundler, ranker (TF‑IDF), Xcode path heuristics, optional git recency, and a CLI end-to-end run.
 
 ## Contributing
 
 Pull requests should stay focused, include tests for behavior changes, and pass `npm test && npm run build`.
+
+## Related
+
+- [context-trimmer](https://github.com/isonka/context-trimmer) — the general-purpose TypeScript version for any codebase
 
 ## License
 
