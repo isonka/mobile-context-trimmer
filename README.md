@@ -17,7 +17,7 @@ npm run build
 Run the CLI:
 
 ```bash
-npx mobile-context-trimmer --dir ./MyApp --budget 32000 --out mobile-context.md
+npx mobile-context-trimmer --dir ./MyApp --query "auth flow crash" --budget 32000 --out mobile-context.md
 ```
 
 ## Project structure

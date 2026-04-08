@@ -4,6 +4,7 @@ import path from "node:path";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { buildBundle, formatBundleMarkdown } from "./bundler.js";
+import { rankMobileFiles } from "./ranker.js";
 import { scanMobileFiles } from "./scanner.js";
 import { createDefaultTokenizer } from "./tokenizer.js";
 
@@ -24,6 +25,11 @@ void yargs(hideBin(process.argv))
     type: "string",
     describe: "Optional output markdown file path"
   })
+  .option("query", {
+    type: "string",
+    default: "",
+    describe: "Optional task/query to rank files before bundling"
+  })
   .command(
     "$0",
     "Build a mobile context bundle",
@@ -33,7 +39,10 @@ void yargs(hideBin(process.argv))
       const budget = Math.max(1, Math.floor(Number(argv.budget)));
 
       const files = await scanMobileFiles({ rootDir, includeContent: false });
-      const bundle = await buildBundle(files, {
+      const rankedFiles = await rankMobileFiles(files, {
+        query: String(argv.query ?? "")
+      });
+      const bundle = await buildBundle(rankedFiles, {
         tokenBudget: budget,
         tokenizer: createDefaultTokenizer()
       });

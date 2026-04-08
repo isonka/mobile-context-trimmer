@@ -21,11 +21,25 @@ describe("cli", () => {
     await withTempDir(async (fixtureDir) => {
       await fs.mkdir(path.join(fixtureDir, "ios"), { recursive: true });
       await fs.writeFile(path.join(fixtureDir, "ios", "AppDelegate.swift"), "class AppDelegate {}", "utf8");
+      await fs.mkdir(path.join(fixtureDir, "android"), { recursive: true });
+      await fs.writeFile(path.join(fixtureDir, "android", "strings.xml"), "<resources />", "utf8");
       const outPath = path.join(fixtureDir, "bundle.md");
 
       await execFileAsync(
         process.execPath,
-        ["--import", "tsx", "src/cli.ts", "--dir", fixtureDir, "--budget", "100", "--out", outPath],
+        [
+          "--import",
+          "tsx",
+          "src/cli.ts",
+          "--dir",
+          fixtureDir,
+          "--budget",
+          "100",
+          "--query",
+          "appdelegate",
+          "--out",
+          outPath
+        ],
         { cwd: path.resolve(process.cwd()) }
       );
 
