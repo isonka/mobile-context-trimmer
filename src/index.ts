@@ -45,3 +45,48 @@ export function getDefaultMobileIgnorePatterns(): string[] {
     "*.xcodeproj/xcuserdata/"
   ];
 }
+
+export type MobilePlatform = "ios" | "android" | "mixed" | "unknown";
+
+/**
+ * Detects mobile platform focus from a list of file paths.
+ */
+export function detectMobilePlatform(paths: string[]): MobilePlatform {
+  let hasIos = false;
+  let hasAndroid = false;
+
+  for (const rawPath of paths) {
+    const normalized = rawPath.toLowerCase();
+    if (
+      normalized.endsWith(".swift") ||
+      normalized.endsWith(".m") ||
+      normalized.endsWith(".mm") ||
+      normalized.endsWith(".plist") ||
+      normalized.includes("/ios/") ||
+      normalized.includes(".xcodeproj")
+    ) {
+      hasIos = true;
+    }
+    if (
+      normalized.endsWith(".kt") ||
+      normalized.endsWith(".kts") ||
+      normalized.endsWith(".java") ||
+      normalized.endsWith("androidmanifest.xml") ||
+      normalized.includes("/android/") ||
+      normalized.includes("build.gradle")
+    ) {
+      hasAndroid = true;
+    }
+  }
+
+  if (hasIos && hasAndroid) {
+    return "mixed";
+  }
+  if (hasIos) {
+    return "ios";
+  }
+  if (hasAndroid) {
+    return "android";
+  }
+  return "unknown";
+}
