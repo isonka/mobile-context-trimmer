@@ -18,7 +18,7 @@ Each file gets a weighted score from three signals:
 
 Default weights: keyword **0.55**, recency **0.30**, type **0.15** (recency matters more on mobile than in generic JS repos).
 
-Files are then selected in **rank order** until the token budget is exhausted.
+Files are then selected in **rank order** until the token budget is exhausted. When you pass a **non-empty `--query`**, the bundler applies a default **keyword relevance floor** (`minKeywordScore: 0`): files with **no lexical match** to the query (`keywordScore <= 0`) are **dropped** before budgeting, so recently touched A/B experiment stubs cannot crowd out on-topic files. Raise the floor with `--min-keyword-score` to demand stronger matches; use **`--min-keyword-score -1`** to disable the floor while keeping ranking.
 
 ## Quick start
 
@@ -40,6 +40,7 @@ npx mobile-context-trimmer --dir ./MyApp --query "navigation stack" --budget 160
 | `--query` | `string` | `""` | Task or keywords for ranking (optional but recommended) |
 | `--budget` | `number` | `32000` | Approximate token budget (char/4 estimator) |
 | `--out` | `string` | none | Write markdown bundle to this path |
+| `--min-keyword-score` | `number` | `0` when `--query` is set; disabled when query empty | Omit files with `keywordScore` at or below this value. Negative value disables the floor. |
 
 ## Scanning defaults
 
@@ -57,6 +58,7 @@ The CLI uses **metadata-first** scanning (`includeContent: false` during walk) a
 - Files included: 2
 - Tokens used: 120
 - Files skipped due to budget: 5
+- Files skipped below keyword relevance floor: 6
 
 ## File: `ios/App/AppDelegate.swift`
 
@@ -86,7 +88,11 @@ const ranked = await rankMobileFiles(files, {
   rootDir,
 });
 const tokenizer = createDefaultTokenizer();
-const bundle = await buildBundle(ranked, { tokenBudget: 32000, tokenizer });
+const bundle = await buildBundle(ranked, {
+  tokenBudget: 32000,
+  tokenizer,
+  minKeywordScore: 0,
+});
 console.log(formatBundleMarkdown(bundle, rootDir));
 ```
 

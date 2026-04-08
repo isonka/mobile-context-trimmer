@@ -30,6 +30,11 @@ void yargs(hideBin(process.argv))
     default: "",
     describe: "Optional task/query to rank files before bundling"
   })
+  .option("min-keyword-score", {
+    type: "number",
+    describe:
+      "Keyword relevance floor when --query is set (default: 0, omit files with no query match). Use a negative value to disable."
+  })
   .command(
     "$0",
     "Build a mobile context bundle",
@@ -37,6 +42,16 @@ void yargs(hideBin(process.argv))
     async (argv) => {
       const rootDir = path.resolve(String(argv.dir));
       const budget = Math.max(1, Math.floor(Number(argv.budget)));
+      const queryTrim = String(argv.query ?? "").trim();
+      const rawMin = argv["min-keyword-score"] as number | undefined;
+      let minKeywordScore: number | undefined;
+      if (queryTrim) {
+        if (rawMin !== undefined && rawMin < 0) {
+          minKeywordScore = undefined;
+        } else {
+          minKeywordScore = rawMin !== undefined ? rawMin : 0;
+        }
+      }
 
       const files = await scanMobileFiles({ rootDir, includeContent: false });
       const rankedFiles = await rankMobileFiles(files, {
@@ -45,7 +60,8 @@ void yargs(hideBin(process.argv))
       });
       const bundle = await buildBundle(rankedFiles, {
         tokenBudget: budget,
-        tokenizer: createDefaultTokenizer()
+        tokenizer: createDefaultTokenizer(),
+        minKeywordScore
       });
       const output = formatBundleMarkdown(bundle, rootDir);
 

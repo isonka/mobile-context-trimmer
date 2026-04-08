@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { buildBundle, formatBundleMarkdown } from "../src/bundler.js";
-import { createDefaultTokenizer } from "../src/tokenizer.js";
+import { type RankedMobileFile } from "../src/ranker.js";
 import { type MobileScannedFile } from "../src/scanner.js";
+import { createDefaultTokenizer } from "../src/tokenizer.js";
 
 const fixtures: MobileScannedFile[] = [
   {
@@ -76,5 +77,42 @@ describe("bundler", () => {
     const markdown = formatBundleMarkdown(bundle, "/tmp");
     expect(markdown).toContain("# Mobile Context Bundle");
     expect(markdown).toContain("## File: `ios/A.swift`");
+    expect(markdown).toContain("skipped below keyword relevance floor");
+  });
+
+  it("omits ranked files at or below minKeywordScore before budget selection", async () => {
+    const ranked: RankedMobileFile[] = [
+      {
+        absolutePath: "/tmp/Exp.swift",
+        relativePath: "ios/Exp.swift",
+        extension: ".swift",
+        sizeBytes: 8,
+        content: "abSwitchKey",
+        score: 0.9,
+        keywordScore: 0,
+        recencyScore: 1,
+        typeScore: 1,
+        lastModifiedEpochMs: 2
+      },
+      {
+        absolutePath: "/tmp/Push.swift",
+        relativePath: "ios/Push.swift",
+        extension: ".swift",
+        sizeBytes: 40,
+        content: "push notification registration",
+        score: 0.5,
+        keywordScore: 0.2,
+        recencyScore: 0,
+        typeScore: 1,
+        lastModifiedEpochMs: 1
+      }
+    ];
+    const bundle = await buildBundle(ranked, {
+      tokenBudget: 100,
+      tokenizer: createDefaultTokenizer(),
+      minKeywordScore: 0
+    });
+    expect(bundle.items.map((i) => i.path)).toEqual(["ios/Push.swift"]);
+    expect(bundle.skippedBelowRelevance).toBe(1);
   });
 });

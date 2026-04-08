@@ -1,11 +1,18 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { type RankedMobileFile } from "./ranker.js";
 import { type MobileScannedFile } from "./scanner.js";
 import { type Tokenizer } from "./tokenizer.js";
 
 export interface BundleOptions {
   tokenBudget: number;
   tokenizer: Tokenizer;
+  /**
+   * When set, files from ranked output with `keywordScore <= minKeywordScore` are omitted
+   * so high-recency boilerplate cannot fill the bundle. Ignored for inputs without `keywordScore`.
+   * Use `0` to require strictly positive lexical relevance vs the query.
+   */
+  minKeywordScore?: number;
 }
 
 export interface BundleItem {
@@ -18,6 +25,7 @@ export interface BundleResult {
   items: BundleItem[];
   usedTokens: number;
   skippedFully: number;
+  skippedBelowRelevance: number;
 }
 
 /**
@@ -30,8 +38,16 @@ export async function buildBundle(
   const items: BundleItem[] = [];
   let usedTokens = 0;
   let skippedFully = 0;
+  let skippedBelowRelevance = 0;
+  const floor = options.minKeywordScore;
 
   for (const file of files) {
+    if (floor !== undefined && hasKeywordScore(file)) {
+      if (file.keywordScore <= floor) {
+        skippedBelowRelevance += 1;
+        continue;
+      }
+    }
     const content = file.content ?? (await fs.readFile(file.absolutePath, "utf8"));
     if (content.trim().length === 0) {
       continue;
@@ -52,7 +68,15 @@ export async function buildBundle(
     usedTokens += estimatedTokens;
   }
 
-  return { items, usedTokens, skippedFully };
+  return { items, usedTokens, skippedFully, skippedBelowRelevance };
+}
+
+function hasKeywordScore(file: MobileScannedFile): file is RankedMobileFile {
+  return (
+    "keywordScore" in file &&
+    typeof (file as RankedMobileFile).keywordScore === "number" &&
+    !Number.isNaN((file as RankedMobileFile).keywordScore)
+  );
 }
 
 /**
@@ -78,6 +102,7 @@ export function formatBundleMarkdown(bundle: BundleResult, rootDir: string): str
     `- Files included: ${bundle.items.length}`,
     `- Tokens used: ${bundle.usedTokens}`,
     `- Files skipped due to budget: ${bundle.skippedFully}`,
+    `- Files skipped below keyword relevance floor: ${bundle.skippedBelowRelevance}`,
     "",
     ...sections
   ].join("\n");
