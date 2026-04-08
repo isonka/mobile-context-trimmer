@@ -3,7 +3,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { buildBundle, formatBundleMarkdown } from "./bundler.js";
+import { buildBundle, DEFAULT_MIN_COMBINED_SCORE_WITH_QUERY, formatBundleMarkdown } from "./bundler.js";
 import { rankMobileFiles } from "./ranker.js";
 import { scanMobileFiles } from "./scanner.js";
 import { createDefaultTokenizer } from "./tokenizer.js";
@@ -38,7 +38,12 @@ void yargs(hideBin(process.argv))
   .option("min-combined-score", {
     type: "number",
     describe:
-      "Minimum weighted rank score (keyword+recency+type) to include a file; drops low-relevance utilities with high recency. Try 0.25–0.35 for task-focused bundles."
+      `Minimum weighted rank score to include a file (default ${DEFAULT_MIN_COMBINED_SCORE_WITH_QUERY} when --query is set). Use -1 to disable. Calibrate ~0.08–0.15 for many iOS repos.`
+  })
+  .option("keyword-recency-reference", {
+    type: "number",
+    describe:
+      "Keyword TF-IDF reference for recency dampening when --query is set (default ~0.055). Lower = stricter. Use 0 to disable dampening."
   })
   .command(
     "$0",
@@ -59,13 +64,22 @@ void yargs(hideBin(process.argv))
       }
 
       const files = await scanMobileFiles({ rootDir, includeContent: false });
+      const kwRef = argv["keyword-recency-reference"] as number | undefined;
       const rankedFiles = await rankMobileFiles(files, {
         query: String(argv.query ?? ""),
-        rootDir
+        rootDir,
+        ...(kwRef !== undefined && !Number.isNaN(kwRef) ? { keywordRecencyReference: kwRef } : {})
       });
+
       const rawCombined = argv["min-combined-score"] as number | undefined;
-      const minCombinedScore =
-        rawCombined !== undefined && !Number.isNaN(rawCombined) ? rawCombined : undefined;
+      let minCombinedScore: number | undefined;
+      if (queryTrim) {
+        if (rawCombined !== undefined && !Number.isNaN(rawCombined)) {
+          minCombinedScore = rawCombined < 0 ? undefined : rawCombined;
+        } else {
+          minCombinedScore = DEFAULT_MIN_COMBINED_SCORE_WITH_QUERY;
+        }
+      }
 
       const bundle = await buildBundle(rankedFiles, {
         tokenBudget: budget,

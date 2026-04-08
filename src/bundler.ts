@@ -4,6 +4,9 @@ import { type RankedMobileFile } from "./ranker.js";
 import { type MobileScannedFile } from "./scanner.js";
 import { type Tokenizer } from "./tokenizer.js";
 
+/** Default `--min-combined-score` when `--query` is set (bundle stage). Use `-1` on the CLI to omit. */
+export const DEFAULT_MIN_COMBINED_SCORE_WITH_QUERY = 0.1;
+
 export interface BundleOptions {
   tokenBudget: number;
   tokenizer: Tokenizer;

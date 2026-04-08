@@ -20,7 +20,13 @@ Default weights: keyword **0.55**, recency **0.30**, type **0.15** (recency matt
 
 Files are then selected in **rank order** until the token budget is exhausted. When you pass a **non-empty `--query`**, the bundler applies a default **keyword relevance floor** (`minKeywordScore: 0`): files with **no lexical match** to the query (`keywordScore <= 0`) are **dropped** before budgeting, so recently touched A/B experiment stubs cannot crowd out on-topic files. Raise the floor with `--min-keyword-score` to demand stronger matches; use **`--min-keyword-score -1`** to disable the floor while keeping ranking.
 
-**Tail noise from recency:** Generic utilities (`OrientationManager`, `AnyEncodable`, layout helpers) can still rank above the keyword floor if they were touched in the same release and pick up a tiny IDF hit. Use **`--min-combined-score`** (library: `minCombinedScore`) to require a minimum **weighted** rank score (keyword + recency + type). Values in the **0.25–0.35** range are a reasonable starting point for task-focused bundles (e.g. “add subscriptions to menu”); tune against your repo so strong feature files still pass.
+**Tail noise from recency:** Utilities can clear the keyword floor from a **spurious** hit (e.g. `subscriptions` as a property name) while **recency still applies at full strength**, so combined scores can stay high (~0.3–0.45) and a **low** `--min-combined-score` (near 0) will not remove them.
+
+Two levers work together:
+
+1. **Recency dampening** (on by default when `--query` is non-empty): recency is scaled by `min(1, keywordScore / reference)` with default reference **~0.055** (`DEFAULT_KEYWORD_RECENCY_REFERENCE`). Weak lexical matches no longer inherit the full 30% recency term. **`--keyword-recency-reference 0`** restores legacy behavior (no dampening). Lower the reference to dampen more aggressively.
+
+2. **Combined score floor:** With a query, the CLI now defaults **`--min-combined-score` to `0.1`** (`DEFAULT_MIN_COMBINED_SCORE_WITH_QUERY`). Calibrate on your repo—many iOS codebases land in roughly the **0.08–0.15** band for separating boilerplate tails from task files; raise toward **0.2** if utilities still slip through. **`--min-combined-score -1`** disables the floor.
 
 ## Quick start
 
@@ -28,10 +34,10 @@ Files are then selected in **rank order** until the token budget is exhausted. W
 npx mobile-context-trimmer --dir ./MyApp --query "fix login crash" --budget 32000 --out mobile-context.md
 ```
 
-Task-focused run (trim utilities that only clear the keyword floor):
+Stricter tail (defaults already apply dampening + combined floor `0.1`; raise if needed):
 
 ```bash
-npx mobile-context-trimmer --dir ./MyApp --query "add subscriptions to menu" --min-combined-score 0.3 --budget 32000 --out mobile-context.md
+npx mobile-context-trimmer --dir ./MyApp --query "add subscriptions to menu" --min-combined-score 0.15 --budget 32000 --out mobile-context.md
 ```
 
 Stream to stdout (omit `--out`):
@@ -49,7 +55,8 @@ npx mobile-context-trimmer --dir ./MyApp --query "navigation stack" --budget 160
 | `--budget` | `number` | `32000` | Approximate token budget (char/4 estimator) |
 | `--out` | `string` | none | Write markdown bundle to this path |
 | `--min-keyword-score` | `number` | `0` when `--query` is set; disabled when query empty | Omit files with `keywordScore` at or below this value. Negative value disables the floor. |
-| `--min-combined-score` | `number` | none | Omit ranked files whose combined `score` is **strictly below** this value. Optional; use to trim low-relevance, high-recency utilities from the bundle tail. |
+| `--min-combined-score` | `number` | **`0.1`** when `--query` is set | Omit ranked files whose combined `score` is **strictly below** this value. **`-1`** disables. |
+| `--keyword-recency-reference` | `number` | **`~0.055`** | Recency dampening reference (see above). **`0`** disables dampening. |
 
 ## Scanning defaults
 
@@ -88,6 +95,7 @@ import {
   rankMobileFiles,
   createDefaultTokenizer,
   buildBundle,
+  DEFAULT_MIN_COMBINED_SCORE_WITH_QUERY,
   formatBundleMarkdown,
 } from "mobile-context-trimmer";
 
@@ -102,7 +110,7 @@ const bundle = await buildBundle(ranked, {
   tokenBudget: 32000,
   tokenizer,
   minKeywordScore: 0,
-  minCombinedScore: 0.3,
+  minCombinedScore: DEFAULT_MIN_COMBINED_SCORE_WITH_QUERY,
 });
 console.log(formatBundleMarkdown(bundle, rootDir));
 ```

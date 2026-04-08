@@ -91,4 +91,65 @@ describe("rankMobileFiles", () => {
       expect(ranked[0]?.relativePath).toBe("A.swift");
     });
   });
+
+  it("dampens recency for weak keyword hits so utilities score below full-recency mode", async () => {
+    await withTempDir(async (dir) => {
+      const legacyPath = path.join(dir, "ios", "Legacy.swift");
+      const utilPath = path.join(dir, "ios", "Util.swift");
+      const featPath = path.join(dir, "ios", "Feat.swift");
+      await fs.mkdir(path.join(dir, "ios"), { recursive: true });
+      await fs.writeFile(legacyPath, "// legacy", "utf8");
+      await fs.writeFile(
+        utilPath,
+        "struct Orientation { let subscriptions: Set<Int> = [] }",
+        "utf8"
+      );
+      await fs.writeFile(
+        featPath,
+        "func addSubscriptionsToMenu() { marktplaats navigation }",
+        "utf8"
+      );
+      const old = new Date("2019-01-01");
+      await fs.utimes(legacyPath, old, old);
+
+      const files: MobileScannedFile[] = [
+        {
+          absolutePath: legacyPath,
+          relativePath: "ios/Legacy.swift",
+          extension: ".swift",
+          sizeBytes: 12,
+          content: "// legacy"
+        },
+        {
+          absolutePath: utilPath,
+          relativePath: "ios/Util.swift",
+          extension: ".swift",
+          sizeBytes: 50,
+          content: "struct Orientation { let subscriptions: Set<Int> = [] }"
+        },
+        {
+          absolutePath: featPath,
+          relativePath: "ios/Feat.swift",
+          extension: ".swift",
+          sizeBytes: 80,
+          content: "func addSubscriptionsToMenu() { marktplaats navigation }"
+        }
+      ];
+
+      const damped = await rankMobileFiles(files, {
+        query: "subscriptions menu marktplaats",
+        rootDir: dir,
+        keywordRecencyReference: 0.5
+      });
+      const fullRecency = await rankMobileFiles(files, {
+        query: "subscriptions menu marktplaats",
+        rootDir: dir,
+        keywordRecencyReference: 0
+      });
+
+      const utilDamped = damped.find((f) => f.relativePath === "ios/Util.swift")?.score ?? 0;
+      const utilFull = fullRecency.find((f) => f.relativePath === "ios/Util.swift")?.score ?? 0;
+      expect(utilDamped).toBeLessThan(utilFull);
+    });
+  });
 });

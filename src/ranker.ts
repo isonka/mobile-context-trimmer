@@ -6,6 +6,12 @@ import { type MobileScannedFile } from "./scanner.js";
 
 const execFileAsync = promisify(execFile);
 
+/**
+ * Keyword TF‑IDF score at or above this value earns full recency weight; weaker matches scale recency down linearly.
+ * Tuned so incidental hits (e.g. `subscriptions` as a property name) do not inherit a full 30% recency boost.
+ */
+export const DEFAULT_KEYWORD_RECENCY_REFERENCE = 0.055;
+
 export interface RankMobileOptions {
   query: string;
   /** Repository root; required for git recency and path resolution. */
@@ -14,6 +20,11 @@ export interface RankMobileOptions {
   recencyWeight?: number;
   typeWeight?: number;
   typePriority?: Record<string, number>;
+  /**
+   * When the query has tokens, recency is multiplied by `min(1, keywordScore / reference)` unless disabled.
+   * Set to `0` to disable dampening (legacy full recency). Default: {@link DEFAULT_KEYWORD_RECENCY_REFERENCE}.
+   */
+  keywordRecencyReference?: number;
 }
 
 export interface RankedMobileFile extends MobileScannedFile {
@@ -77,6 +88,10 @@ export async function rankMobileFiles(
     ...DEFAULT_TYPE_PRIORITY,
     ...normalizeTypePriority(options.typePriority ?? {})
   };
+  const recencyRef =
+    options.keywordRecencyReference === 0
+      ? null
+      : (options.keywordRecencyReference ?? DEFAULT_KEYWORD_RECENCY_REFERENCE);
 
   const keywordStats = await buildKeywordStats(files, tokens);
   const idf = buildInverseDocumentFrequency(keywordStats, tokens);
@@ -90,8 +105,12 @@ export async function rankMobileFiles(
     const lastModifiedEpochMs = timestamps.get(file.relativePath) ?? 0;
     const recencyScore = normalizeFromRange(lastModifiedEpochMs, recencyRange.min, recencyRange.max);
     const typeScore = priority[file.extension] ?? 0;
+    const recencyMultiplier =
+      tokens.length === 0 || recencyRef === null ? 1 : Math.min(1, keywordScore / recencyRef);
     const score =
-      keywordScore * keywordWeight + recencyScore * recencyWeight + typeScore * typeWeight;
+      keywordScore * keywordWeight +
+      recencyScore * recencyWeight * recencyMultiplier +
+      typeScore * typeWeight;
 
     const content = file.content ?? (await fs.readFile(file.absolutePath, "utf8"));
     ranked.push({
