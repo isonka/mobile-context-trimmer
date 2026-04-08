@@ -40,9 +40,55 @@ describe("rankMobileFiles", () => {
       await fs.writeFile(files[0].absolutePath, files[0].content ?? "", "utf8");
       await fs.writeFile(files[1].absolutePath, files[1].content ?? "", "utf8");
 
-      const ranked = await rankMobileFiles(files, { query: "auth middleware" });
+      const ranked = await rankMobileFiles(files, {
+        query: "auth middleware",
+        rootDir: dir,
+        recencyWeight: 0,
+        typeWeight: 0,
+        keywordWeight: 1
+      });
       expect(ranked[0]?.relativePath).toBe("ios/Auth.swift");
       expect(ranked[0]?.score).toBeGreaterThan(ranked[1]?.score ?? 0);
+    });
+  });
+
+  it("uses IDF so rare query terms outweigh ubiquitous matches", async () => {
+    await withTempDir(async (dir) => {
+      const files: MobileScannedFile[] = [
+        {
+          absolutePath: path.join(dir, "A.swift"),
+          relativePath: "A.swift",
+          extension: ".swift",
+          sizeBytes: 20,
+          content: "common rareterm"
+        },
+        {
+          absolutePath: path.join(dir, "B.swift"),
+          relativePath: "B.swift",
+          extension: ".swift",
+          sizeBytes: 40,
+          content: "common common common common common"
+        },
+        {
+          absolutePath: path.join(dir, "C.swift"),
+          relativePath: "C.swift",
+          extension: ".swift",
+          sizeBytes: 10,
+          content: "other"
+        }
+      ];
+      for (const f of files) {
+        await fs.writeFile(f.absolutePath, f.content ?? "", "utf8");
+      }
+
+      const ranked = await rankMobileFiles(files, {
+        query: "common rareterm",
+        rootDir: dir,
+        recencyWeight: 0,
+        typeWeight: 0,
+        keywordWeight: 1
+      });
+      expect(ranked[0]?.relativePath).toBe("A.swift");
     });
   });
 });

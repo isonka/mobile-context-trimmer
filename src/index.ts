@@ -97,7 +97,8 @@ export { buildBundle, formatBundleMarkdown, type BundleOptions, type BundleResul
 export {
   rankMobileFiles,
   tokenizeQuery,
-  computeKeywordScore,
+  computeKeywordScoreFromStats,
+  isGitRecencyUnreliablePath,
   type RankMobileOptions,
   type RankedMobileFile
 } from "./ranker.js";

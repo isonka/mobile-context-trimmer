@@ -40,7 +40,8 @@ void yargs(hideBin(process.argv))
 
       const files = await scanMobileFiles({ rootDir, includeContent: false });
       const rankedFiles = await rankMobileFiles(files, {
-        query: String(argv.query ?? "")
+        query: String(argv.query ?? ""),
+        rootDir
       });
       const bundle = await buildBundle(rankedFiles, {
         tokenBudget: budget,
